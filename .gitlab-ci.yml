@@ -1,0 +1,167 @@
+# Pipeline para UFBank - NestJS Application
+stages:
+  - install
+  - test
+  - build
+  - docker
+  - deploy
+
+# Variáveis globais
+variables:
+  NODE_VERSION: "18"
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: "/certs"
+  IMAGE_NAME: $CI_REGISTRY_IMAGE
+  IMAGE_TAG: $CI_COMMIT_SHORT_SHA
+
+# Cache para node_modules
+cache:
+  paths:
+    - node_modules/
+    - .npm/
+
+# Instalar dependências
+install_dependencies:
+  stage: install
+  image: node:${NODE_VERSION}-alpine
+  script:
+    - npm ci --cache .npm --prefer-offline
+  artifacts:
+    paths:
+      - node_modules/
+    expire_in: 1 hour
+  only:
+    changes:
+      - package*.json
+
+# Executar testes unitários
+test_unit:
+  stage: test
+  image: node:${NODE_VERSION}-alpine
+  dependencies:
+    - install_dependencies
+  script:
+    - npm run test
+  coverage: '/Lines\s*:\s*(\d+\.\d+)%/'
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/cobertura-coverage.xml
+    paths:
+      - coverage/
+    expire_in: 1 week
+  only:
+    changes:
+      - src/**/*.ts
+      - test/**/*.ts
+      - package*.json
+
+# Executar testes e2e
+test_e2e:
+  stage: test
+  image: node:${NODE_VERSION}-alpine
+  dependencies:
+    - install_dependencies
+  script:
+    - npm run test:e2e
+  artifacts:
+    paths:
+      - test-results/
+    expire_in: 1 week
+  only:
+    changes:
+      - src/**/*.ts
+      - test/**/*.ts
+      - package*.json
+
+# Lint do código
+lint:
+  stage: test
+  image: node:${NODE_VERSION}-alpine
+  dependencies:
+    - install_dependencies
+  script:
+    - npm run lint
+  only:
+    changes:
+      - src/**/*.ts
+      - test/**/*.ts
+
+# Build da aplicação
+build_app:
+  stage: build
+  image: node:${NODE_VERSION}-alpine
+  dependencies:
+    - install_dependencies
+  script:
+    - npm run build
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 hour
+
+# Build da imagem Docker
+build_docker:
+  stage: docker
+  image: docker:latest
+  services:
+    - docker:dind
+  dependencies:
+    - build_app
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - docker build -t $IMAGE_NAME:$IMAGE_TAG .
+    - docker build -t $IMAGE_NAME:latest .
+    - docker push $IMAGE_NAME:$IMAGE_TAG
+    - docker push $IMAGE_NAME:latest
+  only:
+    - main
+    - develop
+
+# Deploy para ambiente de desenvolvimento
+deploy_dev:
+  stage: deploy
+  image: bitnami/kubectl:latest
+  dependencies:
+    - build_docker
+  script:
+    - kubectl config use-context $KUBE_CONTEXT_DEV
+    - kubectl set image deployment/ufbank-app ufbank-app=$IMAGE_NAME:$IMAGE_TAG -n ufbank
+    - kubectl rollout status deployment/ufbank-app -n ufbank --timeout=300s
+  environment:
+    name: development
+    url: http://ufbank-dev.local
+  only:
+    - develop
+
+# Deploy para ambiente de produção
+deploy_prod:
+  stage: deploy
+  image: bitnami/kubectl:latest
+  dependencies:
+    - build_docker
+  script:
+    - kubectl config use-context $KUBE_CONTEXT_PROD
+    - kubectl set image deployment/ufbank-app ufbank-app=$IMAGE_NAME:$IMAGE_TAG -n ufbank
+    - kubectl rollout status deployment/ufbank-app -n ufbank --timeout=300s
+  environment:
+    name: production
+    url: http://ufbank.local
+  when: manual
+  only:
+    - main
+
+# Job de segurança - verificar dependências
+security_scan:
+  stage: test
+  image: node:${NODE_VERSION}-alpine
+  dependencies:
+    - install_dependencies
+  script:
+    - npm audit --audit-level moderate
+  allow_failure: true
+  only:
+    changes:
+      - package*.json

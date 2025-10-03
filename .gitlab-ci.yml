@@ -25,7 +25,8 @@ install_dependencies:
   stage: install
   image: node:${NODE_VERSION}-alpine
   script:
-    - npm ci --cache .npm --prefer-offline
+    - npm install
+    - npm install -g @nestjs/cli
   artifacts:
     paths:
       - node_modules/
@@ -95,6 +96,7 @@ build_app:
   dependencies:
     - install_dependencies
   script:
+    - npm install -g @nestjs/cli
     - npm run build
   artifacts:
     paths:

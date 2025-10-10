@@ -7,4 +7,3 @@ export class UserResponseDto {
     this.name = name;
   }
 }
-

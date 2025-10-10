@@ -15,4 +15,3 @@ import { IUserRepository } from './domain/repositories/user.repository.interface
   ],
 })
 export class ExampleModule {}
-

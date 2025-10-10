@@ -16,4 +16,3 @@ export class ExampleController {
     return user;
   }
 }
-

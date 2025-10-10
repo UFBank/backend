@@ -5,4 +5,3 @@ export interface IUserRepository {
 }
 
 export const IUserRepository = Symbol('IUserRepository');
-

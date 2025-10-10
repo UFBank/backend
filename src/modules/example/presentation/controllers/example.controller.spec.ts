@@ -30,27 +30,30 @@ describe('ExampleController', () => {
       // Arrange
       const userId = '1';
       const expectedUser = new UserResponseDto('1', 'luan menezes');
-      jest.spyOn(getUserUseCase, 'execute').mockResolvedValue(expectedUser);
+      const executeSpy = jest
+        .spyOn(getUserUseCase, 'execute')
+        .mockResolvedValue(expectedUser);
 
       // Act
       const result = await controller.getUser(userId);
 
       // Assert
       expect(result).toEqual(expectedUser);
-      expect(getUserUseCase.execute).toHaveBeenCalledWith(userId);
+      expect(executeSpy).toHaveBeenCalledWith(userId);
     });
 
     it('When user does not exist, then should throw NotFoundException', async () => {
       // Arrange
       const userId = '999';
-      jest.spyOn(getUserUseCase, 'execute').mockResolvedValue(null);
+      const executeSpy = jest
+        .spyOn(getUserUseCase, 'execute')
+        .mockResolvedValue(null);
 
       // Act & Assert
       await expect(controller.getUser(userId)).rejects.toThrow(
         NotFoundException,
       );
-      expect(getUserUseCase.execute).toHaveBeenCalledWith(userId);
+      expect(executeSpy).toHaveBeenCalledWith(userId);
     });
   });
 });
-

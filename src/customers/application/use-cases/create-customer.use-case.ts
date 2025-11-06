@@ -14,6 +14,7 @@ import { Customer } from "src/customers/domain/entities/customers.entity";
   async execute(data: CreateCustomerDto): Promise<CustomerResponseDto>{
     const customer = new Customer('', data.name, data.email, data.phone, data.address)
     const create = await this.repository.create(customer);
-    return new CustomerResponseDto(create)
+
+    return CustomerResponseDto.fromEntity(create);
   }
  }

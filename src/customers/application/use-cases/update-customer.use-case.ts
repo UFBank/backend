@@ -9,7 +9,7 @@ import { CustomerResponseDto } from "../dtos/customer-response.dto";
   constructor(
     @Inject(ICustomerRepository)
     private readonly repository: ICustomerRepository,
-  ) {}
+  ) {}  
 
   async execute(id: string, data: UpdateCustomerDto): Promise<CustomerResponseDto>{
     const update = await this.repository.update(id, data);
@@ -17,6 +17,6 @@ import { CustomerResponseDto } from "../dtos/customer-response.dto";
     if (!update) {
       throw new NotFoundException("Customer com ID não encontrado")
     }
-    return new CustomerResponseDto(update);
+    return CustomerResponseDto.fromEntity(update)
   }
  }

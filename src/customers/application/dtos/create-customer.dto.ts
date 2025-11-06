@@ -1,6 +1,4 @@
-import { from } from "rxjs";
 import {IsString, IsEmail, IsNotEmpty, IsOptional} from "class-validator"
-
 
 export class CreateCustomerDto{
   @IsString()
@@ -13,7 +11,7 @@ export class CreateCustomerDto{
 
   @IsString()
   @IsOptional()
-  phone: string;
+  phone?: string;
 
   @IsString()
   @IsOptional()

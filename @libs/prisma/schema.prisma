@@ -1,0 +1,62 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+model User {
+  id        String   @id @default(uuid()) @map("id")
+  name      String   @map("name")
+  email     String   @unique @map("email")
+  roleId    String?  @map("role_id")
+  role      Role?    @relation(fields: [roleId], references: [id])
+  accounts  Account[]
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("users")
+}
+
+model Role {
+  id        String    @id @default(uuid()) @map("id")
+  name      String    @map("name")
+  path      String    @map("path")
+  depth     Int       @map("depth")
+  type      RoleType  @map("type")
+  parentId  String?   @map("parent_id")
+  parent    Role?     @relation("RoleParent", fields: [parentId], references: [id])
+  children  Role[]    @relation("RoleParent")
+  users     User[]
+
+  @@map("roles")
+}
+
+model Account {
+  id        String   @id @default(uuid()) @map("id")
+  number    String   @unique @map("number")
+  type      String   @map("type")
+  balance   Decimal  @default(0) @map("balance")
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("accounts")
+}
+
+enum RoleType {
+  BANK_ROOT      @map("BANK_ROOT")
+  EMPLOYEE       @map("EMPLOYEE")
+  MANAGER        @map("MANAGER")
+  TELLER         @map("TELLER")
+  CUSTOMER       @map("CUSTOMER")
+  INDIVIDUAL     @map("INDIVIDUAL")
+  BUSINESS       @map("BUSINESS")
+}
+

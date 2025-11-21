@@ -54,3 +54,13 @@ pids
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Prisma generated client (novo caminho)
+@libs/generated/prisma/
+
+# Prisma generated client (caminho antigo, legado)
+generated/prisma/
+
+# Prisma migrations (opcional manter versão local apenas)
+@libs/prisma/migrations/
+
